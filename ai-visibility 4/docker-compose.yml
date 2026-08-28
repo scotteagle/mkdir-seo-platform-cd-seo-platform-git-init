@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ai_visibility
+      POSTGRES_PASSWORD: ai_visibility
+      POSTGRES_DB: ai_visibility
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_visibility"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: uvicorn src.web:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://ai_visibility:ai_visibility@postgres:5432/ai_visibility
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: python -m src.worker
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://ai_visibility:ai_visibility@postgres:5432/ai_visibility
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
