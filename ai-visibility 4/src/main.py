@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -27,6 +28,10 @@ def on_startup():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/dashboard")
+def dashboard(): return FileResponse("src/static/dashboard.html")
 
 
 # ---------- request/response schemas ----------
