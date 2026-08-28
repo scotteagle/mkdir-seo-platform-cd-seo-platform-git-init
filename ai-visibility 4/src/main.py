@@ -77,6 +77,26 @@ def create_query(payload: TrackedQueryIn, db: Session = Depends(get_db)):
     return {"id": tq.id, "query_text": tq.query_text, "surfaces": tq.surfaces}
 
 
+
+# ---------- list endpoints (for the dashboard) ----------
+
+@app.get("/brands")
+def list_brands(db: Session = Depends(get_db)):
+        brands = db.query(Brand).order_by(Brand.id).all()
+        return [{"id": b.id, "name": b.name, "aliases": b.aliases} for b in brands]
+
+
+def _query_summary(q):
+        latest = {}
+        for s in sorted(q.snapshots, key=lambda x: x.checked_at): latest[s.surface] = {"mentioned": s.mentioned, "prominence": s.prominence, "sentiment": s.sentiment, "snippet": s.snippet, "checked_at": s.checked_at.isoformat()}
+           return {"id": q.id, "query_text": q.query_text, "surfaces": q.surfaces, "latest": latest}
+
+
+@app.get("/brands/{brand_id}/queries")
+def list_queries(brand_id: int, db: Session = Depends(get_db)):
+        queries = db.query(TrackedQuery).filter_by(brand_id=brand_id).order_by(TrackedQuery.id).all()
+        return [_query_summary(q) for q in queries]
+
 # ---------- dashboard data ----------
 
 @app.get("/brands/{brand_id}/visibility")
