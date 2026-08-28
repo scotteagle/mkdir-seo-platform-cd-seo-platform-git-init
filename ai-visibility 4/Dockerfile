@@ -6,6 +6,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
+COPY alembic.ini .
+COPY migrations/ ./migrations/
 
 # Actual process command is set per-service in docker-compose.yml / your
 # host's service config — this default just makes `docker run` on its own
