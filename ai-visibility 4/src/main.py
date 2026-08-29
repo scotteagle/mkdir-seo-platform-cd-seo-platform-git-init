@@ -94,7 +94,7 @@ def list_brands(db: Session = Depends(get_db)):
 def _query_summary(q):
         latest = {}
         for s in sorted(q.snapshots, key=lambda x: x.checked_at): latest[s.surface] = {"mentioned": s.mentioned, "prominence": s.prominence, "sentiment": s.sentiment, "snippet": s.snippet, "checked_at": s.checked_at.isoformat()}
-           return {"id": q.id, "query_text": q.query_text, "surfaces": q.surfaces, "latest": latest}
+        return {"id": q.id, "query_text": q.query_text, "surfaces": q.surfaces, "latest": latest}
 
 
 @app.get("/brands/{brand_id}/queries")
