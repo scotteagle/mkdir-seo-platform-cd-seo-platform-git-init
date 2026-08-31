@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Visibility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#10141d; --panel:#161c29; --panel-2:#1b2231; --line:#262e40;
+  --text:#e8ebf2; --muted:#8891a6; --faint:#5b6376;
+  --signal:#f2a93b; --signal-dim:#7a5a25;
+  --positive:#43c59e; --negative:#e2687a; --neutral:#6b7488;
+  --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);}
+a{color:inherit;text-decoration:none;}
+.topbar{display:flex;align-items:center;gap:12px;padding:20px 32px;border-bottom:1px solid var(--line);}
+.mark{position:relative;width:14px;height:14px;flex:none;}
+.mark .dot{position:absolute;inset:4px;border-radius:50%;background:var(--signal);}
+.mark .ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--signal);opacity:0;animation:ping 2.4s ease-out infinite;}
+@keyframes ping{0%{opacity:.55;transform:scale(.4);}75%{opacity:0;transform:scale(1.6);}100%{opacity:0;}}
+@media (prefers-reduced-motion: reduce){.mark .ring{animation:none;display:none;}}
+.wordmark{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:-0.01em;}
+.tagline{color:var(--muted);font-size:13px;margin-left:4px;}
+main{max-width:920px;margin:0 auto;padding:40px 32px 80px;}
+.crumb{color:var(--muted);font-size:13px;margin-bottom:18px;display:inline-block;}
+.crumb:hover{color:var(--text);}
+h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0 0 4px;letter-spacing:-0.01em;}
+.aka{color:var(--muted);font-size:14px;margin:0 0 28px;}
+.page-lede{color:var(--muted);font-size:15px;max-width:52ch;line-height:1.5;margin:0 0 32px;}
+.brand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.brand-card{background:var(--panel);padding:20px;transition:background .15s;}
+.brand-card:hover{background:var(--panel-2);}
+.brand-name{font-family:var(--display);font-size:17px;font-weight:600;margin:0 0 12px;}
+.brand-stat{font-family:var(--mono);font-size:22px;color:var(--signal);}
+.brand-stat-label{color:var(--muted);font-size:12px;margin-top:2px;}
+.brand-meta{color:var(--faint);font-size:12px;margin-top:14px;}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:36px;text-align:center;color:var(--muted);font-size:14px;line-height:1.6;}
+.tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;}
+.tab{font-family:var(--body);font-size:13px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);color:var(--muted);cursor:pointer;background:none;}
+.tab.active{border-color:var(--signal-dim);color:var(--signal);background:rgba(242,169,59,.08);}
+.chart-panel{border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:36px;background:var(--panel);}
+.chart-panel h3{font-family:var(--display);font-size:14px;font-weight:600;margin:0 0 18px;color:var(--muted);}
+.chart-wrap{height:220px;}
+.section-title{font-family:var(--display);font-size:14px;font-weight:600;color:var(--muted);margin:0 0 14px;}
+.prompt-card{border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:14px;background:var(--panel);}
+.prompt-text{font-size:15px;font-weight:500;margin:0 0 14px;}
+.prompt-text::before{content:'"';color:var(--faint);}
+.prompt-text::after{content:'"';color:var(--faint);}
+.result-row{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--line);}
+.result-row:first-of-type{border-top:none;}
+.surface-name{width:130px;flex:none;font-size:13px;color:var(--muted);}
+.gauge{position:relative;width:30px;height:30px;flex:none;border-radius:50%;}
+.gauge span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:var(--text);}
+.status-chip{font-size:12px;padding:2px 9px;border-radius:999px;flex:none;}
+.status-chip.yes{background:rgba(67,197,158,.12);color:var(--positive);}
+.status-chip.no{background:rgba(107,116,136,.12);color:var(--neutral);}
+.sentiment-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+.sentiment-dot.positive{background:var(--positive);}
+.sentiment-dot.negative{background:var(--negative);}
+.sentiment-dot.neutral{background:var(--neutral);}
+.snippet{color:var(--muted);font-size:13px;line-height:1.5;margin:6px 0 0 144px;}
+.no-data{color:var(--faint);font-size:13px;padding:8px 0;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="mark"><div class="ring"></div><div class="dot"></div></div>
+  <span class="wordmark">AI Visibility</span>
+  <span class="tagline">— where your brand surfaces in AI answers</span>
+</div>
+<main id="app"></main>
+<script>
+const api = (path) => fetch(path).then(r => r.json());
+const app = document.getElementById('app');
+let chart = null;
+function gaugeStyle(pct) {
+  const deg = Math.round(pct * 360);
+  return `background:conic-gradient(var(--signal) ${deg}deg, var(--line) ${deg}deg)`;
+}
+async function renderOverview() {
+  const brands = await api('/brands');
+  let html = `<p class="page-lede">Tracking how your brands come up when people ask AI assistants for recommendations.</p>`;
+  if (!brands.length) {
+    html += `<div class="empty">No brands tracked yet. Create one via the API to get started.</div>`;
+  } else {
+    html += '<div class="brand-grid">';
+    for (const b of brands) {
+      const queries = await api(`/brands/${b.id}/queries`);
+      const withData = queries.filter(q => Object.keys(q.latest).length);
+      let mentionRate = null;
+      if (withData.length) {
+        const flat = withData.flatMap(q => Object.values(q.latest));
+        mentionRate = Math.round(100 * flat.filter(s => s.mentioned).length / flat.length);
+      }
+      html += `<a class="brand-card" href="#/brand/${b.id}">
+        <div class="brand-name">${b.name}</div>
+        <div class="brand-stat">${mentionRate === null ? '—' : mentionRate + '%'}</div>
+        <div class="brand-stat-label">mention rate</div>
+        <div class="brand-meta">${queries.length} prompt${queries.length === 1 ? '' : 's'} tracked</div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+  app.innerHTML = html;
+}
+async function renderBrand(id) {
+  const [brands, queries] = await Promise.all([api('/brands'), api(`/brands/${id}/queries`)]);
+  const brand = brands.find(b => b.id == id);
+  if (!brand) { app.innerHTML = '<div class="empty">Brand not found.</div>'; return; }
+  const surfaces = ['all', ...new Set(queries.flatMap(q => q.surfaces))];
+  app.innerHTML = `
+    <a class="crumb" href="#/">&larr; All brands</a>
+    <h1>${brand.name}</h1>
+    ${brand.aliases.length ? `<p class="aka">also tracked as ${brand.aliases.join(', ')}</p>` : ''}
+    <div class="tabs" id="tabs"></div>
+    <div class="chart-panel"><h3>Mention rate, last 30 days</h3><div class="chart-wrap"><canvas id="chart"></canvas></div></div>
+    <div class="section-title">Tracked prompts</div>
+    <div id="prompts"></div>
+  `;
+  const tabsEl = document.getElementById('tabs');
+  surfaces.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (s === 'all' ? ' active' : '');
+    btn.textContent = s === 'all' ? 'All surfaces' : s;
+    btn.onclick = () => {
+      tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      loadChart(id, s === 'all' ? null : s);
+    };
+    tabsEl.appendChild(btn);
+  });
+  loadChart(id, null);
+  renderPrompts(queries);
+}
+async function loadChart(brandId, surface) {
+  const qs = surface ? `?days=30&surface=${surface}` : '?days=30';
+  const data = await api(`/brands/${brandId}/visibility${qs}`);
+  const ctx = document.getElementById('chart');
+  if (chart) chart.destroy();
+  if (!data.series.length) {
+    ctx.parentElement.innerHTML = '<div class="no-data">No checks recorded in this window yet.</div>';
+    return;
+  }
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.series.map(d => d.date.slice(5)),
+      datasets: [{
+        data: data.series.map(d => Math.round(d.mention_rate * 100)),
+        borderColor: '#f2a93b',
+        backgroundColor: 'rgba(242,169,59,.12)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { color: '#8891a6', font: { size: 11 }, callback: v => v + '%' }, grid: { color: '#262e40' } },
+        x: { ticks: { color: '#8891a6', font: { size: 11 } }, grid: { display: false } },
+      }
+    }
+  });
+}
+function renderPrompts(queries) {
+  const el = document.getElementById('prompts');
+  if (!queries.length) {
+    el.innerHTML = '<div class="empty">No prompts tracked for this brand yet.</div>';
+    return;
+  }
+  el.innerHTML = queries.map(q => {
+    const surfaces = Object.keys(q.latest);
+    if (!surfaces.length) {
+      return `<div class="prompt-card"><div class="prompt-text">${q.query_text}</div><div class="no-data">No checks recorded yet — waiting on the next scheduled run.</div></div>`;
+    }
+    const rows = surfaces.map(s => {
+      const r = q.latest[s];
+      const pct = Math.round((r.prominence || 0) * 100);
+      return `<div class="result-row">
+        <div class="surface-name">${s}</div>
+        <div class="gauge" style="${gaugeStyle(r.prominence || 0)}"><span>${pct}</span></div>
+        <div class="status-chip ${r.mentioned ? 'yes' : 'no'}">${r.mentioned ? 'Mentioned' : 'Not mentioned'}</div>
+        <div class="sentiment-dot ${r.sentiment}" title="${r.sentiment}"></div>
+      </div>
+      ${r.snippet ? `<div class="snippet">${r.snippet}</div>` : ''}`;
+    }).join('');
+    return `<div class="prompt-card"><div class="prompt-text">${q.query_text}</div>${rows}</div>`;
+  }).join('');
+}
+function route() {
+  const hash = location.hash.slice(1) || '/';
+  const brandMatch = hash.match(/^\/brand\/(\d+)/);
+  if (brandMatch) renderBrand(brandMatch[1]);
+  else renderOverview();
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
